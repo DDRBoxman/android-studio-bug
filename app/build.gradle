@@ -1,0 +1,115 @@
+buildscript {
+    repositories {
+        mavenCentral()
+
+        maven {
+            url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        }
+        maven { url 'http://download.crashlytics.com/maven' }
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.8.+'
+        classpath 'com.squareup.gradle:gradle-android-test-plugin:0.9.1-SNAPSHOT'
+        classpath 'com.crashlytics.tools.gradle:crashlytics-gradle:1.+'
+    }
+}
+
+apply plugin: 'android'
+apply plugin: 'android-test'
+apply plugin: 'crashlytics'
+
+ext.androidAnnotationsVersion = '3.0.1';
+ext.daggerVersion = '1.2.0';
+
+configurations {
+    apt
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.1"
+
+    defaultConfig {
+        minSdkVersion 10
+        targetSdkVersion 19
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+
+    maven { url 'http://download.crashlytics.com/maven' }
+
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+}
+
+dependencies {
+    apt "org.androidannotations:androidannotations:${androidAnnotationsVersion}"
+    compile "org.androidannotations:androidannotations-api:${androidAnnotationsVersion}"
+    apt "com.squareup.dagger:dagger-compiler:${daggerVersion}"
+    compile "com.squareup.dagger:dagger:${daggerVersion}"
+    compile 'com.squareup.retrofit:retrofit:1.3.0'
+    debugCompile 'com.squareup.retrofit:retrofit-mock:1.3.0'
+    debugCompile 'net.vidageek:mirror:1.6.1'
+    compile 'com.squareup.picasso:picasso:2.1.1'
+    compile 'com.jakewharton.timber:timber:2.1.+'
+    compile 'com.android.support:support-v4:19.0.+'
+    compile 'com.android.support:appcompat-v7:19.0.+'
+    compile 'com.google.android.gms:play-services:4.0.30'
+    compile 'com.google.code.gson:gson:2.2.4'
+    compile 'org.apache.commons:commons-lang3:3.1'
+    compile 'com.squareup.okhttp:okhttp:1.3.0'
+    compile 'commons-codec:commons-codec:1.8'
+    compile 'com.andreabaccega:android-form-edittext:1.0.3'
+    compile 'com.j256.ormlite:ormlite-android:4.47'
+    compile 'com.crashlytics.android:crashlytics:1.+'
+    compile('de.keyboardsurfer.android.widget:crouton:1.8.1') {
+        exclude group: 'com.google.android', module: 'support-v4'
+    }
+    compile project(':app:libraries:uservoice:UserVoiceSDK')
+    compile project(':app:libraries:betterdatepicker:library')
+    compile files('libraries/libGoogleAnalyticsServices.jar')
+
+    instrumentTestCompile 'com.squareup.spoon:spoon-client:1.1.0'
+    instrumentTestCompile 'com.jayway.android.robotium:robotium-solo:4.3'
+    instrumentTestCompile 'com.squareup:fest-android:1.0.+'
+
+    testCompile 'junit:junit:4.10'
+    testCompile 'org.robolectric:robolectric:2.3-SNAPSHOT'
+    testCompile 'com.squareup:fest-android:1.0.+'
+    testCompile 'commons-io:commons-io:2.4'
+    testCompile 'org.bouncycastle:bcprov-jdk16:1.46'
+    testCompile 'org.mockito:mockito-all:1.9.5'
+}
+
+android.applicationVariants.all { variant ->
+    aptOutput = file("${project.buildDir}/source/apt_generated/${variant.dirName}")
+    println "****************************"
+    println "variant: ${variant.name}"
+    println "manifest:  ${variant.processResources.manifestFile}"
+    println "aptOutput:  ${aptOutput}"
+    println "****************************"
+
+    variant.javaCompile.doFirst {
+        println "*** compile doFirst ${variant.name}"
+        aptOutput.mkdirs()
+        variant.javaCompile.options.compilerArgs += [
+                '-processorpath', configurations.apt.getAsPath(),
+                '-AandroidManifestFile=' + variant.processResources.manifestFile,
+                '-s', aptOutput
+        ]
+    }
+
+    variant.addJavaSourceFoldersToModel(aptOutput)
+}

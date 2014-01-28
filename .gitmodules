@@ -1,0 +1,6 @@
+[submodule "app/libraries/uservoice"]
+	path = app/libraries/uservoice
+	url = git@github.com:DDRBoxman/uservoice-android-sdk.git
+[submodule "app/libraries/betterdatepicker"]
+	path = app/libraries/betterdatepicker
+	url = git@github.com:DDRBoxman/android-betterpickers.git
